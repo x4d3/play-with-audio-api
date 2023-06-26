@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Frequency Analysis</title>
+</head>
+<body>
+    <p><canvas class="visualizer" width="640" height="100"></canvas>
+        <br>
+        <button id="init" onClick="init()">Start</button></p>
+    <h1 id="note">Press start to begin</h1>
+    <legend>Rounding options:</legend>
+    <div>
+        <input type="radio" id="roundingNone" name="rounding" value="none" >
+        <label for="roundingNone">No rounding</label>
+        <br>
+        <input type="radio" id="roundingMedium" name="rounding" value="hz" checked>
+        <label for="roundingMedium">Round to nearest Hz</label>
+        <br>
+        <input type="radio" id="roundingHard" name="rounding" value="note">
+        <label for="roundingHard">Round to nearest note</label>
+        <br>
+    </div>
+    <br>
+    <legend>Smoothing options:</legend>
+    <div>
+        <input type="radio" id="smoothingNone" name="smoothing" value="none">
+        <label for="smoothingNone">No smoothing</label>
+        <br>
+        <input type="radio" id="smoothingMedium" name="smoothing" value="basic" checked>
+        <label for="smoothingMedium">Basic smoothing</label>
+        <br>
+        <input type="radio" id="smoothingHard" name="smoothing" value="very">
+        <label for="smoothingHard">Very smoothed (note must be more consistent and held for longer)</label>
+        <br>
+    </div>
+    <br>
+    <legend>Display (click Start after you switch):</legend>
+    <div>
+        <input type="radio" id="displaySine" name="display" value="sine" checked>
+        <label for="displaySine">Sine wave</label>
+        <br>
+        <input type="radio" id="displayFrequency" name="display" value="frequency" >
+        <label for="displayFrequency">Frequency</label>
+        <br>
+    </div>
+    <br>
+    <script src="script.js"></script>
+</body>
+</html>
