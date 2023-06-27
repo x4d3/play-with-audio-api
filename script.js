@@ -1,5 +1,6 @@
 function init() {
     let source;
+    let displayValue = 'sine';
     let audioContext = new (window.AudioContext || window.webkitAudioContext)();
     let analyser = audioContext.createAnalyser();
     analyser.minDecibels = -100;
@@ -9,23 +10,32 @@ function init() {
         // No audio allowed
         alert('Sorry, getUserMedia is required for the app.')
         return;
-    } else {
-        let constraints = {audio: true};
-        navigator.mediaDevices.getUserMedia(constraints)
-            .then(
-                function(stream) {
-                    // Initialize the SourceNode
-                    source = audioContext.createMediaStreamSource(stream);
-                    // Connect the source node to the analyzer
-                    source.connect(analyser);
-                    visualize();
-                    document.getElementById('init').hidden = true;
-                }
-            )
-            .catch(function(err) {
-                alert('Sorry, microphone permissions are required for the app. Feel free to read on without playing :)')
-            });
     }
+    let constraints = {audio: true};
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(
+            function (stream) {
+                // Initialize the SourceNode
+                source = audioContext.createMediaStreamSource(stream);
+                // Connect the source node to the analyzer
+                source.connect(analyser);
+                visualize();
+                document.getElementById('init').hidden = true;
+            }
+        )
+        .catch(function (err) {
+            alert(`Sorry, microphone permissions are required for the app. Feel free to read on without playing :) ${err}`);
+        });
+
+
+    const radioButtons = document.querySelectorAll('input[name="display"]');
+
+    radioButtons.forEach((radioButton) => {
+        radioButton.addEventListener('change', () => {
+            displayValue = document.querySelector('input[name="display"]:checked').value;
+        });
+    });
+
 
     // Visualizing, copied from voice change o matic
     const canvas = document.querySelector('.visualizer');
@@ -35,11 +45,17 @@ function init() {
         const width = canvas.width;
         const height = canvas.height;
 
-        let drawVisual;
-        let drawNoteVisual;
 
-        const draw = function() {
-            drawVisual = requestAnimationFrame(draw);
+        const draw = function () {
+            requestAnimationFrame(draw);
+            if (displayValue === 'sine') {
+                drawWaveform();
+            } else {
+                drawFrequency();
+            }
+            drawNote();
+        }
+        const drawWaveform = function () {
             analyser.fftSize = 2048;
             let bufferLength = analyser.fftSize;
             let dataArray = new Uint8Array(bufferLength);
@@ -56,12 +72,12 @@ function init() {
             let sliceWidth = width * 1.0 / bufferLength;
             let x = 0;
 
-            for(let i = 0; i < bufferLength; i++) {
+            for (let i = 0; i < bufferLength; i++) {
 
                 let v = dataArray[i] / 128.0;
-                let y = v * height/2;
+                let y = v * height / 2;
 
-                if(i === 0) {
+                if (i === 0) {
                     canvasContext.moveTo(x, y);
                 } else {
                     canvasContext.lineTo(x, y);
@@ -70,9 +86,10 @@ function init() {
                 x += sliceWidth;
             }
 
-            canvasContext.lineTo(canvas.width, canvas.height/2);
+            canvasContext.lineTo(canvas.width, canvas.height / 2);
             canvasContext.stroke();
         }
+
 
         let previousValueToDisplay = 0;
         let smoothingCount = 0;
@@ -81,13 +98,13 @@ function init() {
 
         // Thanks to PitchDetect: https://github.com/cwilso/PitchDetect/blob/master/js/pitchdetect.js
         let noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        function noteFromPitch( frequency ) {
-            let noteNum = 12 * (Math.log( frequency / 440 )/Math.log(2) );
-            return Math.round( noteNum ) + 69;
+
+        function noteFromPitch(frequency) {
+            let noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+            return Math.round(noteNum) + 69;
         }
 
-        const drawNote = function() {
-            drawNoteVisual = requestAnimationFrame(drawNote);
+        const drawNote = function () {
             let bufferLength = analyser.fftSize;
             let buffer = new Float32Array(bufferLength);
             analyser.getFloatTimeDomainData(buffer);
@@ -95,16 +112,6 @@ function init() {
 
             // Handle rounding
             let valueToDisplay = autoCorrelateValue;
-            let roundingValue = document.querySelector('input[name="rounding"]:checked').value
-            if (roundingValue == 'none') {
-                // Do nothing
-            } else if (roundingValue == 'hz') {
-                valueToDisplay = Math.round(valueToDisplay);
-            } else {
-                // Get the closest note
-                // Thanks to PitchDetect:
-                valueToDisplay = noteStrings[noteFromPitch(autoCorrelateValue) % 12];
-            }
 
             let smoothingValue = document.querySelector('input[name="smoothing"]:checked').value
 
@@ -123,14 +130,16 @@ function init() {
                 smoothingThreshold = 5;
                 smoothingCountThreshold = 10;
             }
+
             function noteIsSimilarEnough() {
                 // Check threshold for number, or just difference for notes.
-                if (typeof(valueToDisplay) == 'number') {
+                if (typeof (valueToDisplay) == 'number') {
                     return Math.abs(valueToDisplay - previousValueToDisplay) < smoothingThreshold;
                 } else {
                     return valueToDisplay === previousValueToDisplay;
                 }
             }
+
             // Check if this value has been within the given range for n iterations
             if (noteIsSimilarEnough()) {
                 if (smoothingCount < smoothingCountThreshold) {
@@ -145,51 +154,39 @@ function init() {
                 smoothingCount = 0;
                 return;
             }
-            if (typeof(valueToDisplay) == 'number') {
-                valueToDisplay += ' Hz';
-            }
 
-            document.getElementById('note').innerText = valueToDisplay;
+            const note = noteStrings[noteFromPitch(valueToDisplay) % 12];
+
+            document.getElementById('note').innerText = `${Math.round(valueToDisplay)} Hz - ${note}`;
         }
 
-        const drawFrequency = function() {
+        const drawFrequency = function () {
             let bufferLengthAlt = analyser.frequencyBinCount;
             let dataArrayAlt = new Uint8Array(bufferLengthAlt);
 
             canvasContext.clearRect(0, 0, width, height);
 
-            let drawAlt = function() {
-                drawVisual = requestAnimationFrame(drawAlt);
 
-                analyser.getByteFrequencyData(dataArrayAlt);
+            analyser.getByteFrequencyData(dataArrayAlt);
 
-                canvasContext.fillStyle = 'rgb(0, 0, 0)';
-                canvasContext.fillRect(0, 0, width, height);
+            canvasContext.fillStyle = 'rgb(0, 0, 0)';
+            canvasContext.fillRect(0, 0, width, height);
 
-                let barWidth = (width / bufferLengthAlt) * 2.5;
-                let barHeight;
-                let x = 0;
+            let barWidth = (width / bufferLengthAlt) * 2.5;
+            let barHeight;
+            let x = 0;
 
-                for(let i = 0; i < bufferLengthAlt; i++) {
-                    barHeight = dataArrayAlt[i];
+            for (let i = 0; i < bufferLengthAlt; i++) {
+                barHeight = dataArrayAlt[i];
 
-                    canvasContext.fillStyle = 'rgb(' + (barHeight+100) + ',50,50)';
-                    canvasContext.fillRect(x,height-barHeight/2,barWidth,barHeight/2);
+                canvasContext.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
+                canvasContext.fillRect(x, height - barHeight / 2, barWidth, barHeight / 2);
 
-                    x += barWidth + 1;
-                }
-            };
+                x += barWidth + 1;
+            }
 
-            console.log('wut')
-            drawAlt();
         }
-
-        let displayValue = document.querySelector('input[name="display"]:checked').value
-        if (displayValue == 'sine') {
-            draw();
-        } else {
-            drawFrequency();
-        }
+        draw();
         drawNote();
     }
 }
@@ -240,13 +237,13 @@ function autoCorrelate(buffer, sampleRate) {
     // For each potential offset, calculate the sum of each buffer value times its offset value
     for (let i = 0; i < SIZE; i++) {
         for (let j = 0; j < SIZE - i; j++) {
-            c[i] = c[i] + buffer[j] * buffer[j+i]
+            c[i] = c[i] + buffer[j] * buffer[j + i]
         }
     }
 
     // Find the last index where that value is greater than the next one (the dip)
     let d = 0;
-    while (c[d] > c[d+1]) {
+    while (c[d] > c[d + 1]) {
         d++;
     }
 
@@ -277,5 +274,5 @@ function autoCorrelate(buffer, sampleRate) {
         T0 = T0 - b / (2 * a);
     }
 
-    return sampleRate/T0;
+    return sampleRate / T0;
 }
