@@ -2,15 +2,17 @@
 <html>
 <head>
     <title>Audio Frequency Analysis</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
 </head>
 <body>
-    <p><canvas class="visualizer" width="640" height="100"></canvas>
-        <br>
-        <button id="init" onClick="init()">Start</button></p>
+
     <h1 id="note">Press start to begin</h1>
+    <button id="init" onClick="init()">Start</button>
+    <canvas class="visualizer" width="640" height="100"></canvas>
+
     <legend>Rounding options:</legend>
     <div>
-        <input type="radio" id="roundingNone" name="rounding" value="none" >
+        <input type="radio" id="roundingNone" name="rounding" value="none">
         <label for="roundingNone">No rounding</label>
         <br>
         <input type="radio" id="roundingMedium" name="rounding" value="hz" checked>
@@ -39,7 +41,7 @@
         <input type="radio" id="displaySine" name="display" value="sine" checked>
         <label for="displaySine">Sine wave</label>
         <br>
-        <input type="radio" id="displayFrequency" name="display" value="frequency" >
+        <input type="radio" id="displayFrequency" name="display" value="frequency">
         <label for="displayFrequency">Frequency</label>
         <br>
     </div>

@@ -1,31 +1,7 @@
-/*
-The MIT License (MIT)
-Copyright (c) 2014 Chris Wilson
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-Note: autoCorrelate comes from https://github.com/cwilso/PitchDetect/pull/23
-with the above license.
-
-*/
-
 function init() {
-    var source;
-    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    var analyser = audioContext.createAnalyser();
+    let source;
+    let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let analyser = audioContext.createAnalyser();
     analyser.minDecibels = -100;
     analyser.maxDecibels = -10;
     analyser.smoothingTimeConstant = 0.85;
@@ -34,7 +10,7 @@ function init() {
         alert('Sorry, getUserMedia is required for the app.')
         return;
     } else {
-        var constraints = {audio: true};
+        let constraints = {audio: true};
         navigator.mediaDevices.getUserMedia(constraints)
             .then(
                 function(stream) {
@@ -43,6 +19,7 @@ function init() {
                     // Connect the source node to the analyzer
                     source.connect(analyser);
                     visualize();
+                    document.getElementById('init').hidden = true;
                 }
             )
             .catch(function(err) {
@@ -51,40 +28,38 @@ function init() {
     }
 
     // Visualizing, copied from voice change o matic
-    var canvas = document.querySelector('.visualizer');
-    var canvasContext = canvas.getContext("2d");
-    var WIDTH;
-    var HEIGHT;
+    const canvas = document.querySelector('.visualizer');
+    const canvasContext = canvas.getContext("2d");
 
     function visualize() {
-        WIDTH = canvas.width;
-        HEIGHT = canvas.height;
+        const width = canvas.width;
+        const height = canvas.height;
 
-        var drawVisual;
-        var drawNoteVisual;
+        let drawVisual;
+        let drawNoteVisual;
 
-        var draw = function() {
+        const draw = function() {
             drawVisual = requestAnimationFrame(draw);
             analyser.fftSize = 2048;
-            var bufferLength = analyser.fftSize;
-            var dataArray = new Uint8Array(bufferLength);
+            let bufferLength = analyser.fftSize;
+            let dataArray = new Uint8Array(bufferLength);
             analyser.getByteTimeDomainData(dataArray);
 
             canvasContext.fillStyle = 'rgb(200, 200, 200)';
-            canvasContext.fillRect(0, 0, WIDTH, HEIGHT);
+            canvasContext.fillRect(0, 0, width, height);
 
             canvasContext.lineWidth = 2;
             canvasContext.strokeStyle = 'rgb(0, 0, 0)';
 
             canvasContext.beginPath();
 
-            var sliceWidth = WIDTH * 1.0 / bufferLength;
-            var x = 0;
+            let sliceWidth = width * 1.0 / bufferLength;
+            let x = 0;
 
-            for(var i = 0; i < bufferLength; i++) {
+            for(let i = 0; i < bufferLength; i++) {
 
-                var v = dataArray[i] / 128.0;
-                var y = v * HEIGHT/2;
+                let v = dataArray[i] / 128.0;
+                let y = v * height/2;
 
                 if(i === 0) {
                     canvasContext.moveTo(x, y);
@@ -99,28 +74,28 @@ function init() {
             canvasContext.stroke();
         }
 
-        var previousValueToDisplay = 0;
-        var smoothingCount = 0;
-        var smoothingThreshold = 5;
-        var smoothingCountThreshold = 5;
+        let previousValueToDisplay = 0;
+        let smoothingCount = 0;
+        let smoothingThreshold = 5;
+        let smoothingCountThreshold = 5;
 
         // Thanks to PitchDetect: https://github.com/cwilso/PitchDetect/blob/master/js/pitchdetect.js
-        var noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        let noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
         function noteFromPitch( frequency ) {
-            var noteNum = 12 * (Math.log( frequency / 440 )/Math.log(2) );
+            let noteNum = 12 * (Math.log( frequency / 440 )/Math.log(2) );
             return Math.round( noteNum ) + 69;
         }
 
-        var drawNote = function() {
+        const drawNote = function() {
             drawNoteVisual = requestAnimationFrame(drawNote);
-            var bufferLength = analyser.fftSize;
-            var buffer = new Float32Array(bufferLength);
+            let bufferLength = analyser.fftSize;
+            let buffer = new Float32Array(bufferLength);
             analyser.getFloatTimeDomainData(buffer);
-            var autoCorrelateValue = autoCorrelate(buffer, audioContext.sampleRate)
+            let autoCorrelateValue = autoCorrelate(buffer, audioContext.sampleRate)
 
             // Handle rounding
-            var valueToDisplay = autoCorrelateValue;
-            var roundingValue = document.querySelector('input[name="rounding"]:checked').value
+            let valueToDisplay = autoCorrelateValue;
+            let roundingValue = document.querySelector('input[name="rounding"]:checked').value
             if (roundingValue == 'none') {
                 // Do nothing
             } else if (roundingValue == 'hz') {
@@ -131,7 +106,7 @@ function init() {
                 valueToDisplay = noteStrings[noteFromPitch(autoCorrelateValue) % 12];
             }
 
-            var smoothingValue = document.querySelector('input[name="smoothing"]:checked').value
+            let smoothingValue = document.querySelector('input[name="smoothing"]:checked').value
 
 
             if (autoCorrelateValue === -1) {
@@ -177,29 +152,29 @@ function init() {
             document.getElementById('note').innerText = valueToDisplay;
         }
 
-        var drawFrequency = function() {
-            var bufferLengthAlt = analyser.frequencyBinCount;
-            var dataArrayAlt = new Uint8Array(bufferLengthAlt);
+        const drawFrequency = function() {
+            let bufferLengthAlt = analyser.frequencyBinCount;
+            let dataArrayAlt = new Uint8Array(bufferLengthAlt);
 
-            canvasContext.clearRect(0, 0, WIDTH, HEIGHT);
+            canvasContext.clearRect(0, 0, width, height);
 
-            var drawAlt = function() {
+            let drawAlt = function() {
                 drawVisual = requestAnimationFrame(drawAlt);
 
                 analyser.getByteFrequencyData(dataArrayAlt);
 
                 canvasContext.fillStyle = 'rgb(0, 0, 0)';
-                canvasContext.fillRect(0, 0, WIDTH, HEIGHT);
+                canvasContext.fillRect(0, 0, width, height);
 
-                var barWidth = (WIDTH / bufferLengthAlt) * 2.5;
-                var barHeight;
-                var x = 0;
+                let barWidth = (width / bufferLengthAlt) * 2.5;
+                let barHeight;
+                let x = 0;
 
-                for(var i = 0; i < bufferLengthAlt; i++) {
+                for(let i = 0; i < bufferLengthAlt; i++) {
                     barHeight = dataArrayAlt[i];
 
                     canvasContext.fillStyle = 'rgb(' + (barHeight+100) + ',50,50)';
-                    canvasContext.fillRect(x,HEIGHT-barHeight/2,barWidth,barHeight/2);
+                    canvasContext.fillRect(x,height-barHeight/2,barWidth,barHeight/2);
 
                     x += barWidth + 1;
                 }
@@ -209,7 +184,7 @@ function init() {
             drawAlt();
         }
 
-        var displayValue = document.querySelector('input[name="display"]:checked').value
+        let displayValue = document.querySelector('input[name="display"]:checked').value
         if (displayValue == 'sine') {
             draw();
         } else {
@@ -224,24 +199,24 @@ function init() {
 // From https://github.com/cwilso/PitchDetect/pull/23
 function autoCorrelate(buffer, sampleRate) {
     // Perform a quick root-mean-square to see if we have enough signal
-    var SIZE = buffer.length;
-    var sumOfSquares = 0;
-    for (var i = 0; i < SIZE; i++) {
-        var val = buffer[i];
+    let SIZE = buffer.length;
+    let sumOfSquares = 0;
+    for (let i = 0; i < SIZE; i++) {
+        let val = buffer[i];
         sumOfSquares += val * val;
     }
-    var rootMeanSquare = Math.sqrt(sumOfSquares / SIZE)
+    let rootMeanSquare = Math.sqrt(sumOfSquares / SIZE)
     if (rootMeanSquare < 0.01) {
         return -1;
     }
 
     // Find a range in the buffer where the values are below a given threshold.
-    var r1 = 0;
-    var r2 = SIZE - 1;
-    var threshold = 0.2;
+    let r1 = 0;
+    let r2 = SIZE - 1;
+    let threshold = 0.2;
 
     // Walk up for r1
-    for (var i = 0; i < SIZE / 2; i++) {
+    for (let i = 0; i < SIZE / 2; i++) {
         if (Math.abs(buffer[i]) < threshold) {
             r1 = i;
             break;
@@ -249,7 +224,7 @@ function autoCorrelate(buffer, sampleRate) {
     }
 
     // Walk down for r2
-    for (var i = 1; i < SIZE / 2; i++) {
+    for (let i = 1; i < SIZE / 2; i++) {
         if (Math.abs(buffer[SIZE - i]) < threshold) {
             r2 = SIZE - i;
             break;
@@ -261,7 +236,7 @@ function autoCorrelate(buffer, sampleRate) {
     SIZE = buffer.length
 
     // Create a new array of the sums of offsets to do the autocorrelation
-    var c = new Array(SIZE).fill(0);
+    let c = new Array(SIZE).fill(0);
     // For each potential offset, calculate the sum of each buffer value times its offset value
     for (let i = 0; i < SIZE; i++) {
         for (let j = 0; j < SIZE - i; j++) {
@@ -270,34 +245,34 @@ function autoCorrelate(buffer, sampleRate) {
     }
 
     // Find the last index where that value is greater than the next one (the dip)
-    var d = 0;
+    let d = 0;
     while (c[d] > c[d+1]) {
         d++;
     }
 
     // Iterate from that index through the end and find the maximum sum
-    var maxValue = -1;
-    var maxIndex = -1;
-    for (var i = d; i < SIZE; i++) {
+    let maxValue = -1;
+    let maxIndex = -1;
+    for (let i = d; i < SIZE; i++) {
         if (c[i] > maxValue) {
             maxValue = c[i];
             maxIndex = i;
         }
     }
 
-    var T0 = maxIndex;
+    let T0 = maxIndex;
 
     // Not as sure about this part, don't @ me
     // From the original author:
     // interpolation is parabolic interpolation. It helps with precision. We suppose that a parabola pass through the
     // three points that comprise the peak. 'a' and 'b' are the unknowns from the linear equation system and b/(2a) is
     // the "error" in the abscissa. Well x1,x2,x3 should be y1,y2,y3 because they are the ordinates.
-    var x1 = c[T0 - 1];
-    var x2 = c[T0];
-    var x3 = c[T0 + 1]
+    let x1 = c[T0 - 1];
+    let x2 = c[T0];
+    let x3 = c[T0 + 1]
 
-    var a = (x1 + x3 - 2 * x2) / 2;
-    var b = (x3 - x1) / 2
+    let a = (x1 + x3 - 2 * x2) / 2;
+    let b = (x3 - x1) / 2
     if (a) {
         T0 = T0 - b / (2 * a);
     }
